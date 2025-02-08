@@ -1,6 +1,6 @@
 # Databricks notebook source
 # Define the source path (external volume)
-SOURCE_PATH = "/Volumes/the_catalog_dev/the_schema/jl666external/"
+SOURCE_PATH = "<path to files>"
 
 # Define the Bronze table - Raw data ingestion
 @dlt.table(comment="Data from files to delta tables in a raw format")

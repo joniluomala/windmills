@@ -1,6 +1,6 @@
 
 select * from  read_files(
-  '/Volumes/the_catalog_dev/the_schema/jl666external', 
+  '<path to files>', 
   format => 'csv',
   header => true,
   mode => 'FAILFAST')
