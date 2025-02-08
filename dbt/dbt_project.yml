@@ -1,0 +1,7 @@
+name: "wind_dbt"  
+version: "1.0"
+profile: "wind_dbt"  
+config-version: 2
+
+models:
+  +materialized: table
