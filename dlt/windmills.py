@@ -14,7 +14,13 @@ def windmill_bronze():
 
 # COMMAND ----------
 
-@dlt.table(comment="Windmill with proper data types and nulls filtered out")
+@dlt.view(comment="Windmill with proper data types and nulls filtered out")
+
+@dlt.expect("valid_timestamp", "wind_direction < 360")
+@dlt.expect("valid_turbine_id", "turbine_id  is not null")
+@dlt.expect("valid_power_output", "power_output is not null")
+@dlt.expect("valid_wind_speed", "wind_speed is not null")
+@dlt.expect("valid_wind_direction", "wind_direction is not null")
 
 def windmill_silver():
     df = spark.table("windmill_bronze") \
@@ -30,7 +36,9 @@ def windmill_silver():
 
 # COMMAND ----------
 
-@dlt.view(comment="Summarized daily averages per turbine")
+@dlt.table(comment="Summarized daily averages per turbine")
+
+@dlt.expect("valid_turbine_id", "turbine_id is not null")
 
 def windmill_gold():
     df = spark.sql('''
@@ -46,7 +54,7 @@ def windmill_gold():
 
 # COMMAND ----------
 
-@dlt.view(comment="power_output is over 2 standard deviotions from daily average")
+@dlt.table(comment="power_output is over 2 standard deviotions from daily average")
 
 def windmill_anomaly():
     df = spark.sql('''
