@@ -1,26 +1,36 @@
 # Databricks notebook source
 # Define the source path (external volume)
 SOURCE_PATH = "<path to files>"
-
 # Define the Bronze table - Raw data ingestion
-@dlt.table(comment="Data from files to delta tables in a raw format")
+@dlt.table(
+    comment="Data from files to delta tables in a raw format",
+    table_properties={"quality": "bronze"}
+    )
 def windmill_bronze():
     return (
-        spark.read.format("csv")
+        spark.readStream.format("cloudfiles")
+        .option("cloudFiles.format", "csv")  # Change format if needed
         .option("header", "true")
+        .option("inferSchema", "true")
         .load(SOURCE_PATH)
     )
 
 
 # COMMAND ----------
 
-@dlt.view(comment="Windmill with proper data types and nulls filtered out")
+rules = {
+    "valid_timestamp": "wind_direction < 360",
+    "valid_turbine_id": "turbine_id  is not null",
+    "valid_power_output": "power_output is not null",
+    "valid_wind_speed": "wind_speed is not null",
+    "valid_wind_direction": "wind_direction is not null"
+}
 
-@dlt.expect("valid_timestamp", "wind_direction < 360")
-@dlt.expect("valid_turbine_id", "turbine_id  is not null")
-@dlt.expect("valid_power_output", "power_output is not null")
-@dlt.expect("valid_wind_speed", "wind_speed is not null")
-@dlt.expect("valid_wind_direction", "wind_direction is not null")
+@dlt.table(
+    comment="Windmill with proper data types and nulls filtered out",
+    table_properties={"quality": "silver"}
+    )
+@dlt.expect_all_or_drop(rules)
 
 def windmill_silver():
     df = spark.table("windmill_bronze") \
@@ -31,8 +41,18 @@ def windmill_silver():
             "cast(wind_direction as int) as wind_direction",
             "cast(power_output as decimal(10, 1)) as power_output"
         ) \
-        .filter("turbine_id is not null and power_output is not null and wind_speed is not null and wind_direction is not null")
+        .dropDuplicates(["timestamp", "turbine_id"])
     return df
+
+# COMMAND ----------
+
+quarantine_rules = {}
+quarantine_rules["invalid_record"] = f"NOT ({' AND '.join(rules.values())})"
+
+@dlt.table
+@dlt.expect_all_or_drop(quarantine_rules)
+def windmill_quarantine():
+    return spark.table("windmill_bronze")
 
 # COMMAND ----------
 
