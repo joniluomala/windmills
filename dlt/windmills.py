@@ -1,7 +1,6 @@
 # Databricks notebook source
-# Define the source path (external volume)
 SOURCE_PATH = "<path to files>"
-# Define the Bronze table - Raw data ingestion
+
 @dlt.table(
     comment="Data from files to delta tables in a raw format",
     table_properties={"quality": "bronze"}
@@ -9,7 +8,7 @@ SOURCE_PATH = "<path to files>"
 def windmill_bronze():
     return (
         spark.readStream.format("cloudfiles")
-        .option("cloudFiles.format", "csv")  # Change format if needed
+        .option("cloudFiles.format", "csv") 
         .option("header", "true")
         .option("inferSchema", "true")
         .load(SOURCE_PATH)
